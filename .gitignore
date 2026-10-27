@@ -1,0 +1,10 @@
+node_modules/
+.squint-build/
+.DS_Store
+*.log
+# Generated code should be built in CI and is not edited or checked in.
+public/js/
+# Never put schedule backups or exports in the public repository.
+*encrypted-*.json
+*readable-*.json
+*private*.json

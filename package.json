@@ -1,0 +1,15 @@
+{
+  "name": "cadence-planner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first scheduling PWA written in Squint ClojureScript",
+  "scripts": {
+    "build": "squint compile && squint run --output-dir .squint-build scripts/vendor.cljs",
+    "test": "squint compile --output-dir .squint-build --paths src --paths test && node .squint-build/cadence/model_test.mjs",
+    "check": "npm run test && npm run build"
+  },
+  "devDependencies": {
+    "squint-cljs": "0.14.210"
+  }
+}
