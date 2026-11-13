@@ -1,43 +1,92 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#152b27">
-  <meta name="description" content="A private, local-first day and week planner. Your schedule stays in your browser.">
-  <title>Cadence — make room for what matters</title>
-  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css">
-  <script type="module" src="./app.mjs"></script>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#172d27"><meta name="description" content="Cadence: a local-first personal home for time and planning.">
+  <title>Cadence · Your time, your own</title>
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./js/cadence/app.mjs"></script>
 </head>
 <body>
-  <div class="shell">
-    <header class="masthead">
-      <div class="brand"><span class="brand-symbol" aria-hidden="true">▦</span><span><strong>Cadence</strong><small>Make room for what matters.</small></span></div>
-      <div class="header-actions"><span class="privacy-indicator" title="Schedule stored on this device"><span class="privacy-dot"></span> On this device</span><button class="icon-button" id="settingsButton" type="button" aria-label="Settings and backups" title="Settings and backups"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 2l-1.8 1.8a1.8 1.8 0 0 0-2-.36l-.8.36a1.8 1.8 0 0 0-1.06 1.65V21h-2.6v-.56a1.8 1.8 0 0 0-1.07-1.65l-.79-.36a1.8 1.8 0 0 0-2 .36L5.84 17a1.8 1.8 0 0 0 .36-2l-.36-.8A1.8 1.8 0 0 0 4.2 13.1H3.5v-2.6h.7a1.8 1.8 0 0 0 1.64-1.07l.36-.79a1.8 1.8 0 0 0-.36-2L7.64 4.8a1.8 1.8 0 0 0 2 .36l.8-.36A1.8 1.8 0 0 0 11.5 3.15V2.5h2.6v.65a1.8 1.8 0 0 0 1.06 1.65l.8.36a1.8 1.8 0 0 0 2-.36l1.8 1.8a1.8 1.8 0 0 0-.36 2l.36.8a1.8 1.8 0 0 0 1.64 1.06h.6v2.6h-.6a1.8 1.8 0 0 0-1.64 1.06Z"/></svg></button></div>
+<div class="app-frame">
+  <aside class="sidebar" aria-label="Application navigation">
+    <div class="app-brand"><span class="app-mark" aria-hidden="true">◷</span><span><strong>Cadence</strong><small>Your time, your own.</small></span></div>
+    <nav class="sidebar-nav" aria-label="Main">
+      <button type="button" class="nav-item active" data-screen="today" aria-current="page"><span aria-hidden="true">◷</span> Today</button>
+      <button type="button" class="nav-item" data-screen="calendar"><span aria-hidden="true">▦</span> Calendar</button>
+      <button type="button" class="nav-item" data-screen="plan"><span aria-hidden="true">☷</span> Plan</button>
+      <button type="button" class="nav-item" data-screen="apps"><span aria-hidden="true">⌘</span> Apps</button>
+    </nav>
+    <div class="side-note">Private on this device<br>Export regularly from Settings.</div>
+  </aside>
+  <div class="workspace">
+    <header class="app-topbar"><span class="topbar-label">CADENCE <span class="topbar-version">2.0 foundation</span></span>
+      <button class="icon-button" id="settingsButton" type="button" aria-label="Settings and backups" title="Settings and backups">⚙</button>
     </header>
-
-    <main>
-      <section class="hero">
-        <div><p class="eyebrow">YOUR OWN RHYTHM</p><h1 id="greeting">A little structure. More room to live.</h1><p class="intro">Keep fixed commitments in view, make space for worthwhile work, and leave some time deliberately open.</p></div>
-        <div class="hero-card"><span class="hero-card-label">Your day</span><strong id="heroDate">—</strong><span id="heroSummary">Start by planning one thing.</span><span class="hero-bed" id="bedtimeBadge">Bedtime target · 8:30 PM</span></div>
+    <main id="main-content">
+      <section class="screen" id="screen-today" aria-label="Today">
+        <div class="page-title"><p class="eyebrow">YOUR DAY</p><h1>Today</h1><p class="subline" id="heroDate">—</p></div>
+        <div class="now-grid">
+          <section class="attention-card" aria-label="Up next"><span class="card-kicker">UP NEXT</span>
+            <h2 id="nowTitle">Your day is open</h2><p id="nowMeta">Your next scheduled commitment will appear here.</p>
+            <button type="button" id="jumpCalendar" class="soft-button">View calendar <span aria-hidden="true">→</span></button>
+          </section>
+          <section class="capture-card" aria-label="Quick capture"><span class="card-kicker">QUICK CAPTURE</span>
+            <h2>Clear your mind.</h2><form id="quickForm" class="quick-form">
+              <label for="quickTitle" class="sr-only">Activity to add to today</label>
+              <input id="quickTitle" name="quickTitle" type="text" maxlength="120" autocomplete="off" placeholder="Something to do today…" required>
+              <button type="submit" class="primary-button">Add</button>
+            </form><button type="button" class="text-button" id="detailedAdd">Schedule with details</button>
+          </section>
+        </div>
+        <div class="section-title"><div><p class="eyebrow">TIME AT A GLANCE</p><h2>Today's commitments</h2></div><p class="quiet-text" id="heroSummary">—</p></div>
+        <div id="todayBlocks" class="today-blocks"></div>
+        <div class="section-title"><h2>Within reach</h2><span class="quiet-text">Personal tools</span></div>
+        <div class="app-links">
+          <a href="https://jkmacy.github.io/solar-clock/" rel="noopener" class="app-link"><span class="app-link-symbol" aria-hidden="true">☼</span><span><strong>Solar Clock</strong><small>Seasonal hours</small></span><span aria-hidden="true">↗</span></a>
+          <a href="https://jkmacy.github.io/ordo/daily.html" rel="noopener" class="app-link"><span class="app-link-symbol" aria-hidden="true">✠</span><span><strong>Daily Ordo</strong><small>Office and calendar</small></span><span aria-hidden="true">↗</span></a>
+        </div>
       </section>
-
-      <section class="planner" aria-label="Planner">
-        <div class="toolbar"><div class="view-tabs" role="group" aria-label="Planner view"><button id="dayTab" type="button" class="tab active" aria-pressed="true">Day</button><button id="weekTab" type="button" class="tab" aria-pressed="false">Week</button></div><div class="toolbar-right"><button id="todayButton" type="button" class="quiet-button">Today</button><button id="prevButton" type="button" class="nav-arrow" aria-label="Previous day or week">‹</button><button id="nextButton" type="button" class="nav-arrow" aria-label="Next day or week">›</button><button id="addButton" type="button" class="primary-button"><span aria-hidden="true">＋</span> Add activity</button></div></div>
-        <div class="date-header"><div><p class="eyebrow" id="periodLabel">YOUR SCHEDULE</p><h2 id="dateHeading">Today</h2></div><input aria-label="Jump to date" type="date" id="datePicker"></div>
-        <div class="week-strip" id="weekStrip" aria-label="Days of the week"></div>
-        <section id="dayView" aria-label="Today's activities"><div id="dayBlocks"></div></section>
-        <section id="weekView" aria-label="Week at a glance" hidden><div id="weekGrid" class="week-grid"></div></section>
+      <section class="screen" id="screen-calendar" aria-label="Calendar" hidden>
+        <div class="page-title"><p class="eyebrow">YOUR TIME</p><h1>Calendar</h1><p class="subline">Your commitments and flexible plans.</p></div>
+        <div class="planner"><div class="toolbar">
+            <div class="view-tabs" role="group" aria-label="Calendar view"><button id="dayTab" type="button" class="tab active" aria-pressed="true">Day</button><button id="weekTab" type="button" class="tab" aria-pressed="false">Week</button></div>
+            <div class="toolbar-right"><button id="todayButton" type="button" class="quiet-button">Today</button>
+            <button id="prevButton" type="button" class="nav-arrow" aria-label="Previous day or week">‹</button>
+            <button id="nextButton" type="button" class="nav-arrow" aria-label="Next day or week">›</button>
+            <button id="addButton" type="button" class="primary-button">+ Add</button></div></div>
+          <div class="date-header"><div><p class="eyebrow" id="periodLabel">DAILY OVERVIEW</p><h2 id="dateHeading">Today</h2></div><input aria-label="Jump to date" type="date" id="datePicker"></div>
+          <div class="week-strip" id="weekStrip" aria-label="Days of the week"></div>
+          <section id="dayView" aria-label="Selected day's activities"><div id="dayBlocks"></div></section>
+          <section id="weekView" aria-label="Week at a glance" hidden><div id="weekGrid" class="week-grid"></div></section>
+        </div>
+        <p class="integration-note"><strong>Calendar integration:</strong> Google Calendar synchronization is not connected yet. Cadence currently stores a separate local schedule. <a href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noopener noreferrer">Open Google Calendar ↗</a></p>
       </section>
-      <section class="closing-note"><span aria-hidden="true">✦</span><p>Unscheduled time is not wasted time. This is a guide, not a scorecard.</p></section>
+      <section class="screen" id="screen-plan" aria-label="Planning" hidden>
+        <div class="page-title"><p class="eyebrow">MAKE ROOM</p><h1>Plan</h1><p class="subline">Fixed commitments first; flexible activities where they fit.</p></div>
+        <div class="plan-toolbar"><div><h2>This week</h2><p class="quiet-text" id="planSummary">—</p></div><button type="button" id="planAdd" class="primary-button">+ Plan activity</button></div>
+        <div id="planBlocks" class="planning-list"></div><p class="integration-note">A guide, not a scorecard. An unscheduled hour does not have to be filled.</p>
+      </section>
+      <section class="screen" id="screen-apps" aria-label="Applications" hidden>
+        <div class="page-title"><p class="eyebrow">PERSONAL COMPUTING</p><h1>Your applications</h1><p class="subline">One home for independent, portable tools.</p></div>
+        <div class="app-links app-catalog">
+          <a href="https://jkmacy.github.io/solar-clock/" rel="noopener" class="app-link"><span class="app-link-symbol" aria-hidden="true">☼</span><span><strong>Solar Clock</strong><small>The canonical hours by the sun</small></span><span aria-hidden="true">↗</span></a>
+          <a href="https://jkmacy.github.io/ordo/daily.html" rel="noopener" class="app-link"><span class="app-link-symbol" aria-hidden="true">✠</span><span><strong>Daily Ordo</strong><small>Western Rite liturgical calendar</small></span><span aria-hidden="true">↗</span></a>
+          <a href="https://calendar.google.com/calendar/u/0/r" rel="noopener" class="app-link"><span class="app-link-symbol" aria-hidden="true">▦</span><span><strong>Google Calendar</strong><small>External calendar provider</small></span><span aria-hidden="true">↗</span></a>
+        </div>
+        <p class="integration-note">Viridarium and a personal library can join this hub when their independent applications are ready.</p>
+      </section>
     </main>
-    <footer>Cadence · A local-first, offline-capable planner · No account, analytics, or remote schedule storage</footer>
   </div>
-
-  <dialog id="activityDialog" class="modal"><form id="activityForm" method="dialog" novalidate><div class="modal-head"><div><p class="eyebrow">YOUR SCHEDULE</p><h2 id="activityTitle">Add an activity</h2></div><button type="button" class="icon-button" data-close="activityDialog" aria-label="Close">×</button></div><div class="modal-body">
+</div>
+<nav class="bottom-nav" aria-label="Main navigation">
+  <button type="button" data-screen="today" class="bottom-nav-item active" aria-current="page"><span aria-hidden="true">◷</span><small>Today</small></button>
+  <button type="button" data-screen="calendar" class="bottom-nav-item"><span aria-hidden="true">▦</span><small>Calendar</small></button>
+  <button type="button" data-screen="plan" class="bottom-nav-item"><span aria-hidden="true">☷</span><small>Plan</small></button>
+  <button type="button" data-screen="apps" class="bottom-nav-item"><span aria-hidden="true">⌘</span><small>Apps</small></button>
+</nav>
+<dialog id="activityDialog" class="modal"><form id="activityForm" method="dialog" novalidate><div class="modal-head"><div><p class="eyebrow">YOUR SCHEDULE</p><h2 id="activityTitle">Add an activity</h2></div><button type="button" class="icon-button" data-close="activityDialog" aria-label="Close">×</button></div><div class="modal-body">
     <label class="field">Activity name <input name="title" maxlength="120" required placeholder="e.g. Common Lisp practice"></label>
     <div class="two-cols"><label class="field">Category <input name="category" id="categoryInput" list="categorySuggestions" maxlength="50" required placeholder="School"></label><label class="field">Importance <select name="kind"><option value="fixed">Fixed commitment</option><option value="flexible">Flexible activity</option></select></label></div>
     <datalist id="categorySuggestions"></datalist>
@@ -57,6 +106,6 @@
     <section class="settings-section privacy-note"><h3>Privacy boundary</h3><p>No account, tracking scripts, external fonts, or remote databases. Browser storage is <strong>not encrypted at rest</strong>; anyone with access to your unlocked browser profile could read it. Clearing website data can erase your plan. An update to the public app code could also access data stored in this browser, so only install code you trust.</p></section>
   </div><div class="modal-actions"><span class="grow"></span><button type="button" class="primary-button" data-close="settingsDialog">Done</button></div></dialog>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-</body>
-</html>
+  
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body></html>

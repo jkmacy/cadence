@@ -1,45 +1,99 @@
-# Cadence architecture, explained
+# Cadence 2 architecture and transition to Common Lisp
 
-**Core idea:** A small scheduling application can be data and functions rather than a framework.
+Cadence is intended to be a **personal computing home centered on time**. Its future
+domain model is Common Lisp. It presently has two **separate** implementations:
 
-## `src/cadence/model.cljs` — testable logic
+1. **Common Lisp foundation**, `cl/core.lisp`. This small ANSI Common Lisp
+   library has its own executable checks in `cl/tests/core-test.lisp`.
+   It covers date/time parsing, recurrence, daily ordering, conflicts, daily
+   summaries, and subtracting fixed commitments from a time window.
+2. **Existing Squint browser bridge**, `src/cadence/model.cljs` and
+   `src/cadence/app.cljs`, deployed as JavaScript through GitHub Pages.
+   This still drives Cadence 2's current PWA. It preserves the v1 local
+   storage data model and manual JSON/encrypted export and import.
 
-An activity is a map: `{:title "Study" :kind "flexible" :repeat "weekly" :days [1 3 4]}`.
+**Important:** The CL library is not yet the authoritative implementation used
+by the browser. No synchronization, native app, Google Calendar import,
+external account access, or fully offline development environment is claimed.
 
-- `clean-item` checks incoming activity data and prevents invalid dates and times.
-- `occurrences` asks which activities belong to a particular day and sorts them.
-- `overlaps?` compares two time intervals.
-- `status-change` changes a specific date's completion status without modifying a repeating activity.
-- `day-summary` counts activities for the day.
+## Platform-neutral model first
 
-This file never touches the browser; it can be tested from Node after compiling Squint.
+Keep scheduling policy, rules, recurring events, conflict checks, and
+coordination logic in Common Lisp. Treat persistence, calendars, notifications,
+device APIs, and graphic toolkits as independent adapters.
 
-## `src/cadence/app.cljs` — browser boundary
+Future options include a native service or packaged CL process for macOS/Linux,
+and ECL embedding for Android. A browser-only host cannot execute ordinary
+SBCL bytecode or machine code, so the web experience will need an explicitly
+documented boundary, not an assertion that a static HTML page runs CL.
 
-The app keeps temporary state in an `atom`. It renders HTML elements and responds to input events. Whenever the schedule changes, it saves the new data into that browser's `localStorage`. All text entered by the user is inserted as text content, not raw HTML.
+The goal is **one well-tested, authoritative CL model**, with thin platform
+integrations. Before moving the PWA to that architecture, establish shared
+serialization fixtures and cross-implementation tests. Then migrate one
+capability at a time, not all scheduling behavior simultaneously.
 
-Backups use a JSON representation that can be explicitly transferred between devices. For encrypted exports, browser Web Crypto derives an AES-GCM key from a passphrase via PBKDF2. The passphrase itself is never saved by Cadence.
+## Workstation setup
 
-## Why Squint and not Common Lisp?
+On macOS: install SBCL through Homebrew (or another package manager).
+On Linux: install `sbcl` through your distribution's repository.
 
-GitHub Pages serves static assets and does not run a backend. Browsers execute JavaScript. Squint lets us maintain application logic in a ClojureScript-style Lisp, compiling it to the browser's required JavaScript. Its small footprint is suitable for a small PWA. Your independent Common Lisp learning can remain separate from this delivery constraint.
+From the repository root:
 
-Common Lisp-to-WASM/JavaScript implementations may be explored later, but would add build and maintenance complexity to an otherwise simple personal tool.
+```sh
+sbcl --noinform --disable-debugger --script cl/tests/core-test.lisp
+```
 
-## Privacy model
+No Quicklisp, Java, JavaScript, or network access is needed for **these CL tests**.
+For the current PWA delivery, Node and its pinned Squint dependency are still
+needed:
 
-**Public:** static application code, source, icons, styles, build files.
+```sh
+npm install
+npm test
+npm run build
+```
 
-**Private on each device:** activities, notes, completion, bed/wake settings.
+The package is still online-dependent on first installation; do not claim
+whole-project offline reproducibility yet.
 
-No automatic synchronization exists. This is deliberate: it avoids handing private schedule data to GitHub Pages or a hosted database. Browser storage is readable to code served from the same origin and to parties with access to the unlocked browser profile. Review app updates before deploying them.
+## Your learning starting point
 
-## Extending Cadence
+1. Read `cl/core.lisp` and run the tests locally.
+2. At the SBCL REPL, load the library and try:
+   `(cadence.core:minute-of-day "09:30")`
+3. Inspect `daily-entries`. Trace how a weekday and start time are derived.
+4. Write a small test first, then change one behavior deliberately.
+5. Keep changes small, commit them, and make sure existing browser and CL tests
+   continue to pass.
 
-1. Add a small pure function to `model.cljs` for the new domain behavior.
-2. Add an assertion in `test/cadence/model_test.cljs`.
-3. Run `npm test`.
-4. Add UI behavior in `app.cljs` and test in a browser.
-5. Run `npm run build`, then commit source changes.
+Use AI assistance as an explanatory reviewer when learning. A changed function
+should be understandable and maintainable by the owner without AI.
 
-The GitHub Actions workflow compiles and publishes the app automatically. It never needs your local data.
+## Browser interface and privacy boundary
+
+The initial Cadence 2 redesign comprises Today, Calendar, Plan, Apps,
+and one-line quick capture. These are delivered by a Squint temporary bridge.
+
+The original `cadence-local-private-v1` key and data format remain in place,
+so an existing installed copy does **not** require an automatic migration.
+
+All schedule items remain in origin-bound browser `localStorage`. This is not
+encrypted at rest and is not synchronized across devices. Back up before
+clearing browser data or uninstalling the application. A file import replaces
+the destination schedule rather than merging it.
+
+Google Calendar is currently an external link, **not a connected calendar
+feed**. No credentials or events are sent to the hosting repository.
+
+## Long-term modules
+
+- Core domain (Common Lisp)
+- Portable serialization and migration formats (Common Lisp)
+- Local storage adapters (Common Lisp on supported platforms)
+- Google Calendar or CalDAV adapters with explicit authorization
+- Phone and desktop UI shells
+- Optional encrypted cross-device synchronization
+- Personal app hub, independent of each app's build system
+
+Do not merge business rules into UI adapters. Do not introduce an obligatory
+external service just to add local functionality.

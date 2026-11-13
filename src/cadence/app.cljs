@@ -20,6 +20,7 @@
 (defonce state (atom {:data (load-data)
                       :selected (model/local-date)
                       :view :day
+                      :screen :today
                       :editing nil}))
 
 (defn toast! [message]
@@ -28,7 +29,7 @@
     (.add (.-classList node) "show")
     (js/setTimeout #(.remove (.-classList node) "show") 4000)))
 
-(declare render! open-editor! set-data!)
+(declare render! open-editor! set-data! set-screen!)
 
 (defn set-data! [new-data]
   (try
@@ -68,12 +69,12 @@
     (.format fmt (js/Date. (str day "T12:00:00")))))
 
 (defn go-day! [day]
-  (swap! state assoc :selected day :view :day)
+  (swap! state assoc :selected day :view :day :screen :calendar)
   (render!))
 
 (defn update-status! [item status]
   (let [{:keys [selected data]} @state]
-    (set-data! (model/status-change data (:id item) selected status))))
+    (set-data! (model/status-change data (:id item) (or (:on item) selected) status))))
 
 (defn activity-card [item others]
   (let [conflict? (some (fn [other]
@@ -184,6 +185,93 @@
                  dots)
         (append! root pill)))))
 
+
+(def screens [:today :calendar :plan :apps])
+
+(defn set-screen! [screen]
+  (when (some #{screen} screens)
+    (swap! state assoc :screen screen)
+    (render!)))
+
+(defn render-home! []
+  (let [today (model/local-date)
+        data (:data @state)
+        entries (model/occurrences data today)
+        root (by-id "todayBlocks")
+        current-time (+ (* 60 (.getHours (js/Date.)))
+                        (.getMinutes (js/Date.)))
+        upcoming (first (filter
+                         #(let [start (model/minutes (:start %))
+                                end (model/minutes (:end %))]
+                            (and (not (:skipped %))
+                                 (not (:done %))
+                                 start
+                                 (>= (or end start) current-time)))
+                         entries))]
+    (set-text! "heroDate" (date-label today false))
+    (set-text! "heroSummary"
+               (let [stats (model/day-summary data today)]
+                 (str (:done stats) " of " (:total stats) " activities complete")))
+    (set-text! "nowTitle" (if upcoming (:title upcoming) "Your time is your own"))
+    (set-text! "nowMeta" (if upcoming
+                          (str (model/time-label upcoming) " · " (:category upcoming))
+                          "No more timed commitments are scheduled for today."))
+    (.replaceChildren root)
+    (if (empty? entries)
+      (let [blank (element "div" "empty-state" "")]
+        (append! blank
+                 (element "h3" "" "A little room to breathe.")
+                 (element "p" "" "Capture something to do, or keep the day open.")
+                 (button "Add an activity" "secondary-button" #(open-editor! nil)))
+        (append! root blank))
+      (append! root
+               (activity-section "Fixed commitments"
+                                 (filter #(= "fixed" (:kind %)) entries) entries)
+               (activity-section "Flexible activities"
+                                 (filter #(= "flexible" (:kind %)) entries) entries)))))
+
+(defn render-plan! []
+  (let [data (:data @state)
+        days (model/week-days (model/local-date))
+        root (by-id "planBlocks")
+        total (reduce + (map #(count (model/occurrences data %)) days))]
+    (set-text! "planSummary"
+               (str total " planned " (if (= total 1) "activity" "activities")))
+    (.replaceChildren root)
+    (doseq [day days]
+      (let [entries (model/occurrences data day)
+            panel (element "section" "plan-day" "")
+            heading (button (date-label day true) "plan-date" #(go-day! day))
+            details (element "div" "plan-details" "")]
+        (if (empty? entries)
+          (append! details (element "p" "quiet-text" "Open day"))
+          (doseq [entry entries]
+            (append! details
+                     (element "p" ""
+                              (str (model/time-label entry)
+                                   " · " (:title entry)
+                                   (when (:done entry) " ✓"))))))
+        (append! panel heading details)
+        (append! root panel)))))
+
+(defn quick-capture! [event]
+  (.preventDefault event)
+  (let [field (by-id "quickTitle")
+        title (.trim (.-value field))]
+    (when (not (empty? title))
+      (try
+        (let [data (:data @state)
+              entry (model/clean-item
+                     {:id (model/new-id) :title title :category "Other"
+                      :kind "flexible" :notes "" :repeat "once" :days []
+                      :date (model/local-date) :start "" :end ""})]
+          (when (set-data! (assoc data :items (conj (:items data) entry)))
+            (set! (.-value field) "")
+            (toast! "Added to today")))
+        (catch :default error
+          (js/console.error error)
+          (toast! "Could not add activity"))))))
+
 (defn render! []
   (let [{:keys [selected view data]} @state]
     (when data
@@ -193,13 +281,17 @@
                         (date-label selected false)
                         (str "Week of " (date-label (model/monday-of selected) true)))]
         (set-value! "datePicker" selected)
-        (set-text! "heroDate" (date-label selected false))
-        (set-text! "heroSummary"
-                   (if (pos? (:total stats))
-                     (str (:done stats) " of " (:total stats) " activities completed")
-                     "Make room for what matters today."))
-        (set-text! "bedtimeBadge"
-                   (str "Bedtime target · " (model/clock-label (get-in data [:settings :bedtime]))))
+        (doseq [screen screens]
+          (set! (.-hidden (by-id (str "screen-" (name screen))))
+                (not= screen (:screen @state))))
+        (doseq [control (js/Array.from (.querySelectorAll js/document "[data-screen]"))]
+          (let [active (= (name (:screen @state)) (.getAttribute control "data-screen"))]
+            (.toggle (.-classList control) "active" active)
+            (if active
+              (.setAttribute control "aria-current" "page")
+              (.removeAttribute control "aria-current"))))
+        (render-home!)
+        (render-plan!)
         (set-text! "periodLabel" (if day? "DAILY OVERVIEW" "WEEK AT A GLANCE"))
         (set-text! "dateHeading" date-head)
         (.toggle (.-classList (by-id "dayTab")) "active" day?)
@@ -426,6 +518,14 @@
       (toast! "Clipboard unavailable. Use a supported HTTPS browser."))))
 
 (defn wire! []
+  (doseq [control (js/Array.from (.querySelectorAll js/document "[data-screen]"))]
+    (listen! control "click"
+             #(set-screen! (keyword (.getAttribute control "data-screen")))))
+  (listen! (by-id "jumpCalendar") "click" #(set-screen! :calendar))
+  (listen! (by-id "detailedAdd") "click" #(open-editor! nil))
+  (listen! (by-id "planAdd") "click" #(do (swap! state assoc :selected (model/local-date))
+                                           (open-editor! nil)))
+  (listen! (by-id "quickForm") "submit" quick-capture!)
   (listen! (by-id "todayButton") "click" #(go-day! (model/local-date)))
   (listen! (by-id "prevButton") "click"
            #(do (swap! state update :selected model/shift-day

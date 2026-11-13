@@ -1,5 +1,5 @@
 // Small service-worker platform shim: no private data is read or cached.
-const CACHE = 'cadence-shell-v2';
+const CACHE = 'cadence-shell-v3-cl-foundation';
 const SHELL = [
   './', './index.html', './styles.css', './manifest.webmanifest',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png',
