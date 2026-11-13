@@ -1,7 +1,7 @@
 name: Verify Cadence 2 and the Common Lisp core
 on:
   push:
-    branches: [cadence-2-common-lisp-foundation]
+    branches: [master, cadence-2-common-lisp-foundation]
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -36,3 +36,15 @@ jobs:
           test -s public/js/squint-cljs/core.js
           grep -q 'id="screen-today"' public/index.html
           grep -q 'id="quickForm"' public/index.html
+      - name: Install browser smoke-test runtime
+        run: npm install --no-save playwright && npx playwright install --with-deps chromium
+      - name: Exercise Pixel-sized and desktop UI
+        run: node test/browser-smoke.mjs
+      - name: Retain visual snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cadence-2-browser-screens
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
