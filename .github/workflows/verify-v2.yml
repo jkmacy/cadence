@@ -1,0 +1,38 @@
+name: Verify Cadence 2 and the Common Lisp core
+on:
+  push:
+    branches: [cadence-2-common-lisp-foundation]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install SBCL
+        run: sudo apt-get update -qq && sudo apt-get install -y sbcl
+      - name: Test ANSI Common Lisp scheduling model
+        run: sbcl --noinform --disable-debugger --script cl/tests/core-test.lisp
+      - name: Install pinned browser bridge compiler
+        run: npm install --no-audit --no-fund
+      - name: Test existing scheduling and backup compatibility
+        run: npm test
+      - name: Build browser app
+        run: npm run build
+      - name: Check app's shell and compiled modules
+        run: |
+          set -eu
+          test -s public/index.html
+          test -s public/js/cadence/app.mjs
+          test -s public/js/cadence/model.mjs
+          test -s public/js/squint-cljs/core.js
+          grep -q 'id="screen-today"' public/index.html
+          grep -q 'id="quickForm"' public/index.html
