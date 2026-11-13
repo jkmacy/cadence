@@ -1,10 +1,16 @@
 # Cadence
 
-**A local-first, Lisp-first Progressive Web App** for an intentional daily rhythm.
+**Cadence 2.0 foundation: a personal computing home centered on time.** The long-term domain language is ANSI Common Lisp; the current Pixel/web shell is a transitional Squint PWA. These are not yet a single integrated runtime. See [architecture](docs/ARCHITECTURE.md).
 
 Cadence provides fixed commitments alongside flexible activities and deliberate unstructured time. It is a tool, not a scorecard.
 
-## Features
+## What is available now
+
+- Mobile-first Today, Calendar, Plan and Apps screens
+- One-line capture of an untimed flexible activity for today
+- Immediate links to Solar Clock and Daily Ordo
+- A dependency-free Common Lisp core with runnable SBCL tests (currently **not used by the browser UI**)
+- Still planned: Google Calendar synchronization, native packaging, secure sync, Common Lisp-driven browser experience
 
 - Day view and week view; move between dates
 - Editable one-off and weekly recurring activities
@@ -28,9 +34,23 @@ There is no account, analytics, automatic synchronization, or backend. The publi
 
 ## Technology
 
-The maintained application is written in **Squint ClojureScript** (`src/cadence/*.cljs`), with a separate pure model and browser UI. Squint generates ECMAScript modules to serve on GitHub Pages. `public/index.html`, `public/styles.css`, and the minimal `public/sw.js` are web platform files. The Squint runtime is vendored at build time; the deployed site does not fetch it from a third-party CDN.
+The present browser bridge is written in **Squint ClojureScript** (`src/cadence/*.cljs`), with a separate pure model and browser UI. Squint generates ECMAScript modules to serve on GitHub Pages. `public/index.html`, `public/styles.css`, and the minimal `public/sw.js` are web platform files. The Squint runtime is vendored at build time; the deployed site does not fetch it from a third-party CDN.
 
-This is a Lisp-first project; generated JavaScript is a deployment artifact, not the editable source.
+Generated JavaScript is a deployment artifact. New domain logic should favor ANSI Common Lisp and a thin, replaceable platform boundary.
+
+## Common Lisp study and maintenance
+
+```sh
+sbcl --noinform --disable-debugger --script cl/tests/core-test.lisp
+```
+
+The CL tests require only an installed Common Lisp implementation (tested in CI
+with SBCL). The PWA build still requires Node.js, npm, and Squint.
+
+To study Cadence without AI, start with `cl/core.lisp`, then
+`cl/tests/core-test.lisp`. The existing browser scheduling bridge remains in
+`src/cadence/model.cljs`. The migration goal is to retire the duplicate
+scheduling policy, not maintain two diverging implementations.
 
 ## Development
 
