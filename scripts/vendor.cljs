@@ -15,7 +15,7 @@
               (if (.isDirectory entry)
                 (files-under p)
                 [p])))
-          (array-seq (fs/readdirSync dir #js {:withFileTypes true}))))
+          (fs/readdirSync dir #js {:withFileTypes true})))
 
 (let [source "node_modules/squint-cljs"
       destination "public/js/squint-cljs"
