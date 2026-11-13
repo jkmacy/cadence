@@ -31,8 +31,16 @@ try {
   assert.equal(await page.locator('.bottom-nav').isVisible(),true,'mobile navigation visible');
   await page.locator('#quickTitle').fill('Finish reading');
   await page.locator('#quickForm button[type=submit]').click();
-  await page.getByText('Finish reading',{exact:true}).first().waitFor();
+  mkdirSync('test-results',{recursive:true});
+  await page.screenshot({path:'test-results/cadence-2-after-capture.png',fullPage:true});
+  console.log('Quick capture diagnostic:', JSON.stringify({
+    errors,
+    todayText: await page.locator('#todayBlocks').innerText(),
+    toast: await page.locator('#toast').innerText()
+  }));
   const record=await page.evaluate(()=>JSON.parse(localStorage.getItem('cadence-local-private-v1')));
+  assert(record && record.items.some(x=>x.title==='Finish reading'),'quick capture saved record');
+  await page.getByText('Finish reading',{exact:true}).first().waitFor({timeout:5000});
   assert(record.items.some(x=>x.title==='Finish reading'),'local data preserved');
   await page.locator('.bottom-nav [data-screen="calendar"]').click();
   assert.equal(await page.locator('#screen-calendar').isVisible(),true,'calendar opens');
